@@ -27,6 +27,7 @@ use ffmpeg::util::format::pixel;
 use ffmpeg::util::log ;
 use std::path::Path;
 use chrono::NaiveDateTime;
+use std::error::Error;
 
 
 extern "C" {
@@ -160,7 +161,9 @@ impl Transcoder {
     fn send_frame_to_encoder(&mut self, frame: &frame::Video) {
         match self.encoder.send_frame(frame) {
             Ok(_) => {}
-            _ => eprintln!("ERROR: while sending packet to encoder")
+            Err(err) => {
+                eprintln!("{}", err);
+            }
         }
     }
     fn receive_and_process_encoded_packets(&mut self, ost_time_base: Rational, buffer: &mut [u8]) -> usize {
@@ -639,7 +642,7 @@ impl MjpegServer {
                                             match transport.receive_and_process_decoded_frames(ost_time_base, &mut data) {
                                                 Ok(n) => {
                                                     if n == 0 {
-                                                        break;
+                                                        continue;
                                                     }
                                                     if buffer_pos + n >= MAX_BUFFER_LENGTH {
                                                         std::process::exit(1);
